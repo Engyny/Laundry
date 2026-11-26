@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Mobile Order Tracker | Aquart Laundry</title>
+    <meta name="description" content="Mobile real-time laundry progress tracker for Aquart Laundry customers.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        body {
+            background: #f1f5f9;
+        }
+        .mobile-tracker-container {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 1rem;
+            min-height: 100vh;
+        }
+        .mobile-header-card {
+            background: var(--primary-gradient);
+            color: white;
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            box-shadow: var(--shadow-lg);
+            margin-bottom: 1rem;
+            position: relative;
+            overflow: hidden;
+        }
+        .mobile-card {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 1.4rem;
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 1rem;
+            border: 1px solid #e2e8f0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="mobile-tracker-container">
+        <!-- Top App Bar -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding: 0.25rem 0.5rem;">
+            <a href="index.html" style="text-decoration: none; color: #475569; font-weight: 700; font-size: 0.85rem; display: flex; align-items: center; gap: 0.35rem;">
+                ← Back to Home
+            </a>
+            <div style="font-size: 0.72rem; color: #64748b; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;">
+                Customer Live Portal
+            </div>
+        </div>
+
+        <!-- Mobile Header Card -->
+        <div class="mobile-header-card">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.85;">Aquart Laundry Station</div>
+                    <div style="font-size: 1.6rem; font-weight: 800; font-family: monospace; margin: 0.2rem 0;" id="m-jo-title">JO-2026-1081</div>
+                    <div style="font-size: 0.9rem; opacity: 0.9;" id="m-cust-name">Maria Santos</div>
+                </div>
+                <div style="background: rgba(255,255,255,0.2); padding: 0.6rem; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                    <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
+                        <path d="M12 12a3 3 0 1 0 3-3"></path>
+                    </svg>
+                </div>
+            </div>
+
+            <div style="margin-top: 1.2rem; display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.15); padding: 0.75rem 1rem; border-radius: 12px;">
+                <div>
+                    <div style="font-size: 0.72rem; opacity: 0.8;">Current Status:</div>
+                    <div id="m-status-text" style="font-size: 1rem; font-weight: 800; color: #fef08a;">Ready for Pickup</div>
+                </div>
+                <div id="m-pay-badge" class="badge-paid">PAID</div>
+            </div>
+        </div>
+
+        <!-- Quick Switcher Bar on Phone -->
+        <div style="display: flex; gap: 0.4rem; margin-bottom: 1rem;">
+            <input type="text" id="m-search-input" class="form-control" placeholder="Search JO# or last digits (e.g. 1004 or 4)" style="font-size: 0.85rem; padding: 0.6rem 0.8rem;">
+            <button type="button" id="m-btn-search" class="btn btn-primary" style="padding: 0 1rem; font-size: 0.85rem;">Find</button>
+        </div>
+
+        <!-- Realtime Steps Card -->
+        <div class="mobile-card">
+            <h3 style="font-size: 0.95rem; font-weight: 700; color: #0f172a; margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between;">
+                <span>Laundry Progress</span>
+                <span id="m-refresh-indicator" style="font-size: 0.75rem; color: #10b981; font-weight: 600;">● Live Updated</span>
+            </h3>
+
+            <!-- Vertical Stepper for Phone Browsers -->
+            <div id="m-stepper-list" style="display: flex; flex-direction: column; gap: 1rem;">
+                <!-- Generated by JS -->
+            </div>
+        </div>
+
+        <!-- Order Summary Card -->
+        <div class="mobile-card">
+            <h3 style="font-size: 0.95rem; font-weight: 700; color: #0f172a; margin-bottom: 0.8rem;">Order Details</h3>
+            <div class="receipt-row">
+                <span style="color: #64748b;">Service:</span>
+                <strong id="m-service">Wash - Dry - Fold</strong>
+            </div>
+            <div class="receipt-row">
+                <span style="color: #64748b;">Weight:</span>
+                <strong id="m-weight">6.5 kg</strong>
+            </div>
+            <div class="receipt-row">
+                <span style="color: #64748b;">Add-ons:</span>
+                <span id="m-addons" style="color: #0f172a; font-weight: 600;">Downy Fabcon</span>
+            </div>
+            <div class="receipt-row">
+                <span style="color: #64748b;">Logged Date:</span>
+                <span id="m-date" style="color: #64748b;">--</span>
+            </div>
+            <div class="receipt-row" id="m-slot-row" style="display: none;">
+                <span style="color: #64748b;">Drop-off Slot:</span>
+                <strong id="m-slot" style="color: #b45309;">--</strong>
+            </div>
+            <div class="receipt-divider"></div>
+            <div class="receipt-row">
+                <span style="font-weight: 700; color: #0f172a;">Grand Total:</span>
+                <span id="m-total" style="font-weight: 800; font-size: 1.15rem; color: var(--primary);">₱247.50</span>
+            </div>
+        </div>
+
+        <!-- Post-Service Feedback Rating Callout Card (Appears if Order is Completed) -->
+        <div id="m-feedback-card" class="mobile-card" style="display: none; background: #ecfdf5; border: 1.5px solid #6ee7b7;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+                <span style="font-size: 0.72rem; font-weight: 800; color: #047857; text-transform: uppercase; letter-spacing: 0.05em;">Rate Your Experience</span>
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.09 6.26L20 9l-5 3.64L16.18 19 12 15.27 7.82 19 9 12.64 4 9l5.91-.74L12 2z"></path></svg>
+            </div>
+            <h4 style="font-size: 1rem; font-weight: 800; color: #064e3b; margin-bottom: 0.3rem;">How was your laundry service?</h4>
+            <p style="font-size: 0.8rem; color: #065f46; margin-bottom: 0.8rem;">Your clothes are claimed and completed! Please take 5 seconds to rate our wash quality and service.</p>
+            <button type="button" id="m-btn-open-feedback" class="btn btn-primary btn-block" style="background: linear-gradient(135deg, #059669, #10b981); border: none; font-size: 0.85rem; font-weight: 800; padding: 0.65rem; border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 0.4rem;">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                <span>Leave Service Rating / Feedback</span>
+            </button>
+            <div id="m-feedback-done-badge" style="display: none; text-align: center; color: #047857; font-size: 0.82rem; font-weight: 700; padding: 0.4rem; background: #d1fae5; border-radius: 8px;">
+                ✓ You already submitted feedback for this order. Thank you!
+            </div>
+        </div>
+
+        <!-- Phone Action Bar -->
+        <div style="display: flex; gap: 0.5rem; margin-bottom: 2rem;">
+            <a href="tel:09178923412" class="btn btn-outline btn-block" style="text-decoration: none; font-size: 0.85rem;">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.86 19.86 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.86 19.86 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13 1.21.37 2.39.72 3.53a2 2 0 0 1-.45 2.11L8.09 10.91a16.06 16.06 0 0 0 6 6l1.61-1.61a2 2 0 0 1 2.11-.45c1.14.35 2.32.59 3.53.72A2 2 0 0 1 22 16.92z"/></svg>
+            </a>
+            <button type="button" id="m-btn-share" class="btn btn-primary btn-block" style="font-size: 0.85rem;"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8h16v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> Share Tracking Link</button>
+        </div>
+    </div>
+
+    <!-- Mobile Feedback Modal -->
+    <div id="m-feedback-modal" class="modal-overlay">
+        <div class="modal-dialog" style="max-width: 440px;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #059669, #10b981); color: white; border-radius: 18px 18px 0 0; padding: 1.1rem 1.4rem;">
+                <div style="display: flex; align-items: center; gap: 0.6rem;">
+                    <div style="font-size: 1.2rem;"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15 8 22 9 17 14 19 21 12 17 5 21 7 14 2 9 9 8 12 2"/></svg></div>
+                    <div>
+                        <h3 style="font-size: 1.15rem; font-weight: 800; color: white;">Rate Your Service</h3>
+                        <div style="font-size: 0.72rem; opacity: 0.95;">Aquart Customer Feedback</div>
+                    </div>
+                </div>
+                <button type="button" id="btn-close-m-feedback" class="modal-close-btn" style="color: white; opacity: 0.85;">&times;</button>
+            </div>
+
+            <div class="modal-body" style="padding: 1.4rem;">
+                <div id="m-feedback-form-wrap">
+                    <div style="text-align: center; margin-bottom: 1rem;">
+                        <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; font-weight: 700;">Completed Job Order</span>
+                        <div id="m-feedback-jo" style="font-size: 1.45rem; font-weight: 800; font-family: monospace; color: #059669;">JO-2026-1081</div>
+                    </div>
+
+                    <form id="m-rating-form">
+                        <div style="margin-bottom: 1rem; text-align: center;">
+                            <label style="display: block; font-size: 0.85rem; font-weight: 700; color: #1e293b; margin-bottom: 0.4rem;">Tap stars to rate:</label>
+                            <div class="star-rating-selector" id="m-star-selector" style="display: inline-flex; gap: 0.4rem; font-size: 2rem; cursor: pointer;">
+                                <span class="m-star-item active" data-rating="1">★</span>
+                                <span class="m-star-item active" data-rating="2">★</span>
+                                <span class="m-star-item active" data-rating="3">★</span>
+                                <span class="m-star-item active" data-rating="4">★</span>
+                                <span class="m-star-item active" data-rating="5">★</span>
+                            </div>
+                            <input type="hidden" id="m-feedback-rating-val" value="5">
+                            <div id="m-feedback-rating-desc" style="font-size: 0.8rem; font-weight: 800; color: #059669; margin-top: 4px;">5 Stars - Spotless & Excellent!</div>
+                        </div>
+
+                        <div style="margin-bottom: 1rem;">
+                            <label for="m-feedback-text" style="display: block; font-size: 0.82rem; font-weight: 700; color: #1e293b; margin-bottom: 0.35rem;">Comments (Optional):</label>
+                            <textarea id="m-feedback-text" rows="3" class="reserve-input" placeholder="How was the fold, scent, and speed?" style="font-size: 0.85rem; width: 100%; box-sizing: border-box;"></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-block" style="background: linear-gradient(135deg, #059669, #10b981); border: none; padding: 0.75rem; font-size: 0.95rem; font-weight: 800; border-radius: 12px;">
+                            Submit Feedback
+                        </button>
+                    </form>
+                </div>
+
+                <div id="m-feedback-thankyou" style="display: none; text-align: center; padding: 1.5rem 0.5rem;">
+                    <div style="font-size: 3rem; margin-bottom: 0.5rem;">🎉</div>
+                    <h4 style="font-size: 1.2rem; font-weight: 800; color: #065f46; margin-bottom: 0.4rem;">Salamat Kaayo!</h4>
+                    <p style="font-size: 0.85rem; color: #475569; line-height: 1.45; margin-bottom: 1.2rem;">
+                        Your rating has been received. Have a wonderful day!
+                    </p>
+                    <button type="button" id="btn-close-m-thankyou" class="btn btn-outline btn-sm" style="border-radius: 9999px; padding: 0.45rem 1.4rem;">
+                        Done
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/store.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            LaundryStore.init();
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const currentJo = urlParams.get('jo') || '';
+
+            if (currentJo) {
+                renderMobileTracker(currentJo);
+            } else {
+                const latest = (LaundryStore.getOrders() || [])[0];
+                if (latest) {
+                    renderMobileTracker(latest.id);
+                } else {
+                    renderMobileTracker('');
+                }
+            }
+
+            const mSearchBtn = document.getElementById('m-btn-search');
+            const mSearchInput = document.getElementById('m-search-input');
+
+            if (mSearchBtn) {
+                mSearchBtn.addEventListener('click', () => {
+                    const val = mSearchInput ? mSearchInput.value.trim() : '';
+                    if (val) {
+                        renderMobileTracker(val);
+                        const newUrl = new URL(window.location.href);
+                        newUrl.searchParams.set('jo', val.toUpperCase());
+                        window.history.replaceState({}, '', newUrl);
+                    }
+                });
+            }
+
+            if (mSearchInput) {
+                mSearchInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (mSearchBtn) mSearchBtn.click();
+                    }
+                });
+            }
+
+            document.getElementById('m-btn-share').addEventListener('click', () => {
+                const titleJo = document.getElementById('m-jo-title')?.innerText || 'Order';
+                if (navigator.share) {
+                    navigator.share({
+                        title: 'Aquart Laundry Tracker',
+                        text: `Track my laundry order (${titleJo}) live on Aquart Laundry!`,
+                        url: window.location.href
+                    }).catch(() => {});
+                } else if (navigator.clipboard) {
+                    navigator.clipboard.writeText(window.location.href);
+                    alert('Tracking link copied to clipboard!');
+                }
+            });
+
+            // Live Instant Real-time Bus
+            if (window.AquartRealtimeBus) {
+                window.AquartRealtimeBus.on((msg) => {
+                    const jo = document.getElementById('m-jo-title')?.innerText;
+                    if (jo && !jo.includes(' ')) {
+                        if (msg.payload?.order && msg.payload.order.id.toUpperCase() === jo.toUpperCase()) {
+                            renderMobileTracker(jo);
+                        }
+                    }
+                    if (msg.type === 'SYSTEM_RESET') {
+                        renderMobileTracker('');
+                    }
+                });
+            }
+
+            // Live reactivity fallback
+            window.addEventListener('storage', () => {
+                const jo = document.getElementById('m-jo-title').innerText;
+                if (jo && !jo.includes(' ')) renderMobileTracker(jo);
+            });
+
+            window.addEventListener('freshwave_order_updated', (e) => {
+                const jo = document.getElementById('m-jo-title').innerText;
+                if (e.detail && e.detail.order && e.detail.order.id.toUpperCase() === jo.toUpperCase()) {
+                    renderMobileTracker(jo);
+                }
+            });
+        });
+
+        function renderMobileTracker(joId) {
+            if (!joId) {
+                document.getElementById('m-jo-title').innerText = 'No Order Selected';
+                document.getElementById('m-cust-name').innerText = 'Enter your Job Order # above to track live';
+                document.getElementById('m-status-text').innerText = 'Awaiting Input';
+                const pBadge = document.getElementById('m-pay-badge');
+                if (pBadge) pBadge.style.display = 'none';
+                return;
+            }
+
+            const order = LaundryStore.getOrderById(joId);
+            if (!order) {
+                document.getElementById('m-jo-title').innerText = joId.toUpperCase();
+                document.getElementById('m-cust-name').innerText = 'Order not found. Please verify Job Order reference.';
+                document.getElementById('m-status-text').innerText = 'Not Found';
+                const pBadge = document.getElementById('m-pay-badge');
+                if (pBadge) pBadge.style.display = 'none';
+                return;
+            }
+
+            const pBadge = document.getElementById('m-pay-badge');
+            if (pBadge) pBadge.style.display = 'inline-block';
+
+            document.getElementById('m-jo-title').innerText = order.id;
+            document.getElementById('m-cust-name').innerText = order.customerName;
+            document.getElementById('m-service').innerText = order.serviceName;
+            document.getElementById('m-weight').innerText = `${order.weight} kg`;
+            document.getElementById('m-total').innerText = `₱${order.totalAmount.toFixed(2)}`;
+            document.getElementById('m-date').innerText = new Date(order.createdAt).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+            const addonsElem = document.getElementById('m-addons');
+            if (order.addOns && order.addOns.length > 0) {
+                addonsElem.innerText = order.addOns.map(a => ADD_ONS[a]?.name || a).join(', ');
+            } else {
+                addonsElem.innerText = 'None';
+            }
+
+            // Drop-off Slot
+            const slotRow = document.getElementById('m-slot-row');
+            if (slotRow) {
+                if (order.dropOffSlot) {
+                    slotRow.style.display = 'flex';
+                    document.getElementById('m-slot').innerText = `${order.dropOffDate || ''} (${order.dropOffSlot})`;
+                } else {
+                    slotRow.style.display = 'none';
+                }
+            }
+
+            // Pay badge
+            const payBadge = document.getElementById('m-pay-badge');
+            if (order.paymentStatus === 'paid') {
+                payBadge.className = 'badge-paid';
+                payBadge.innerText = 'PAID';
+            } else {
+                payBadge.className = 'badge-unpaid';
+                payBadge.innerText = `UNPAID ₱${order.totalAmount.toFixed(2)}`;
+            }
+
+            // Current status
+            const sDef = ORDER_STATUSES.find(s => s.key === order.status) || ORDER_STATUSES[0];
+            document.getElementById('m-status-text').innerText = `${sDef.icon} ${sDef.label}`;
+
+            // Vertical Stepper
+            const statusIdx = ORDER_STATUSES.findIndex(s => s.key === order.status);
+            const stepperContainer = document.getElementById('m-stepper-list');
+            stepperContainer.innerHTML = '';
+
+            ORDER_STATUSES.forEach((st, idx) => {
+                const isPassed = idx < statusIdx;
+                const isCurrent = idx === statusIdx;
+
+                const stepDiv = document.createElement('div');
+                stepDiv.style.cssText = `
+                    display: flex;
+                    align-items: center;
+                    gap: 1rem;
+                    padding: 0.6rem 0.8rem;
+                    border-radius: 10px;
+                    background: ${isCurrent ? '#f0fdf4' : (isPassed ? '#f8fafc' : 'transparent')};
+                    border: 1px solid ${isCurrent ? '#86efac' : (isPassed ? '#e2e8f0' : 'transparent')};
+                `;
+
+                const circleColor = isPassed ? '#10b981' : (isCurrent ? '#0284c7' : '#cbd5e1');
+                const textColor = isPassed ? '#0f172a' : (isCurrent ? '#0369a1' : '#94a3b8');
+
+                stepDiv.innerHTML = `
+                    <div style="width: 34px; height: 34px; border-radius: 50%; background: ${circleColor}; color: white; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; flex-shrink: 0;">
+                        ${isPassed ? '✓' : st.icon}
+                    </div>
+                    <div style="flex: 1;">
+                        <div style="font-size: 0.88rem; font-weight: 700; color: ${textColor};">
+                            ${st.label} ${isCurrent ? '<span style="font-size: 0.7rem; background: #0284c7; color: white; padding: 2px 6px; border-radius: 10px; margin-left: 6px;">CURRENT</span>' : ''}
+                        </div>
+                        <div style="font-size: 0.75rem; color: #64748b;">${st.sublabel || ''}</div>
+                    </div>
+                `;
+
+                stepperContainer.appendChild(stepDiv);
+            });
+
+            // Post-Service Customer Feedback Visibility
+            checkMobileFeedbackState(order);
+        }
+
+        // Feedback Logic for Mobile Tracker
+        function checkMobileFeedbackState(order) {
+            const feedbackCard = document.getElementById('m-feedback-card');
+            const openFeedbackBtn = document.getElementById('m-btn-open-feedback');
+            const doneBadge = document.getElementById('m-feedback-done-badge');
+            const modal = document.getElementById('m-feedback-modal');
+            const joDisplay = document.getElementById('m-feedback-jo');
+
+            if (!feedbackCard || !order) return;
+
+            if (order.status === 'completed') {
+                feedbackCard.style.display = 'block';
+                const hasDone = LaundryStore.hasSubmittedFeedback(order.id);
+                if (hasDone) {
+                    if (openFeedbackBtn) openFeedbackBtn.style.display = 'none';
+                    if (doneBadge) doneBadge.style.display = 'block';
+                } else {
+                    if (openFeedbackBtn) openFeedbackBtn.style.display = 'block';
+                    if (doneBadge) doneBadge.style.display = 'none';
+                }
+
+                if (joDisplay) joDisplay.innerText = order.id;
+            } else {
+                feedbackCard.style.display = 'none';
+                if (modal) modal.classList.remove('active');
+            }
+        }
+
+        // Initialize Feedback Modal Events
+        (function initMobileFeedbackEvents() {
+            const modal = document.getElementById('m-feedback-modal');
+            const openBtn = document.getElementById('m-btn-open-feedback');
+            const closeBtn = document.getElementById('btn-close-m-feedback');
+            const thankCloseBtn = document.getElementById('btn-close-m-thankyou');
+            const ratingForm = document.getElementById('m-rating-form');
+            const ratingInput = document.getElementById('m-feedback-rating-val');
+            const ratingDesc = document.getElementById('m-feedback-rating-desc');
+            const formWrap = document.getElementById('m-feedback-form-wrap');
+            const thankyouWrap = document.getElementById('m-feedback-thankyou');
+            const starItems = document.querySelectorAll('#m-star-selector .m-star-item');
+
+            const ratingLabels = {
+                1: '1 Star - Needs Improvement',
+                2: '2 Stars - Fair Service',
+                3: '3 Stars - Satisfactory',
+                4: '4 Stars - Very Good & Fresh!',
+                5: '5 Stars - Spotless & Excellent!'
+            };
+
+            if (openBtn) {
+                openBtn.addEventListener('click', () => {
+                    const jo = document.getElementById('m-jo-title')?.innerText.trim();
+                    if (!jo || jo === 'No Order Selected') return;
+                    if (formWrap) formWrap.style.display = 'block';
+                    if (thankyouWrap) thankyouWrap.style.display = 'none';
+                    if (modal) modal.classList.add('active');
+                });
+            }
+
+            if (closeBtn) closeBtn.addEventListener('click', () => modal?.classList.remove('active'));
+            if (thankCloseBtn) thankCloseBtn.addEventListener('click', () => modal?.classList.remove('active'));
+
+            starItems.forEach(star => {
+                star.addEventListener('click', function () {
+                    const r = parseInt(this.getAttribute('data-rating'), 10) || 5;
+                    if (ratingInput) ratingInput.value = r;
+                    if (ratingDesc) ratingDesc.innerText = ratingLabels[r] || `${r} Stars`;
+
+                    starItems.forEach(s => {
+                        const sVal = parseInt(s.getAttribute('data-rating'), 10);
+                        if (sVal <= r) {
+                            s.classList.add('active');
+                            s.style.color = '#f59e0b';
+                        } else {
+                            s.classList.remove('active');
+                            s.style.color = '#cbd5e1';
+                        }
+                    });
+
+                    if (window.LaundryStore && LaundryStore.playAudioChime) {
+                        LaundryStore.playAudioChime('tap');
+                    }
+                });
+            });
+
+            if (ratingForm) {
+                ratingForm.addEventListener('submit', function (e) {
+                    e.preventDefault();
+                    const jo = document.getElementById('m-feedback-jo')?.innerText.trim() || document.getElementById('m-jo-title')?.innerText.trim();
+                    const order = LaundryStore.getOrderById(jo);
+                    const rating = parseInt(ratingInput?.value, 10) || 5;
+                    const comment = document.getElementById('m-feedback-text')?.value.trim();
+
+                    LaundryStore.saveFeedback({
+                        orderId: jo,
+                        customerName: order ? order.customerName : 'Customer',
+                        customerPhone: order ? order.customerPhone : '',
+                        serviceName: order ? order.serviceName : 'Laundry Service',
+                        rating: rating,
+                        comment: comment
+                    });
+
+                    if (window.LaundryStore && LaundryStore.playAudioChime) {
+                        LaundryStore.playAudioChime('ready');
+                    }
+
+                    if (formWrap) formWrap.style.display = 'none';
+                    if (thankyouWrap) thankyouWrap.style.display = 'block';
+
+                    const openFeedbackBtn = document.getElementById('m-btn-open-feedback');
+                    const doneBadge = document.getElementById('m-feedback-done-badge');
+                    if (openFeedbackBtn) openFeedbackBtn.style.display = 'none';
+                    if (doneBadge) doneBadge.style.display = 'block';
+                });
+            }
+        })();
+    </script>
+</body>
+</html>

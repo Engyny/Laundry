@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manager & Admin Analytics Module | Aquart Laundry</title>
+    <meta name="description" content="Sales and revenue analytics, inventory supply tracker, and customer records CRM for Aquart Laundry.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <style id="auth-guard-style">html { display: none !important; }</style>
+    <script src="js/store.js"></script>
+    <script>
+        (function() {
+            LaundryStore.init();
+            const activeAdminUser = LaundryStore.requireAuth(['admin'], 'Manager Analytics & Executive Suite');
+            if (activeAdminUser) {
+                const s = document.getElementById('auth-guard-style');
+                if (s) s.remove();
+            } else {
+                window.stop && window.stop();
+            }
+        })();
+    </script>
+</head>
+<body>
+
+    <!-- Top Navigation Bar -->
+    <header class="navbar navbar-admin-dark">
+        <div class="navbar-container">
+            <a href="index.html" class="brand-logo">
+                <div class="brand-drop-icon" title="Aquart Laundry Station">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
+                        <path d="M12 12a3 3 0 1 0 3-3"></path>
+                    </svg>
+                </div>
+                <div class="brand-title-wrap">
+                    <div class="brand-title-text">Aquart <span>Laundry</span></div>
+                    <div class="brand-subtitle-tag">SMART WORKFLOW & TRACKING</div>
+                </div>
+            </a>
+
+            <nav>
+                <ul class="nav-links">
+                    <li><a href="index.html" class="nav-link">Customer Tracker</a></li>
+                    <li><a href="staff.html" class="nav-link">Staff Cashier</a></li>
+                    <li><a href="admin.html" class="nav-link active">Admin Analytics</a></li>
+                </ul>
+            </nav>
+
+            <!-- Manager Session Badge with Logout -->
+            <div class="user-session-badge" id="admin-session-widget">
+                <div class="user-avatar-circle" id="admin-user-initials" style="background: linear-gradient(135deg, #7c3aed, #4f46e5);">AD</div>
+                <div class="user-meta">
+                    <span class="user-meta-name" id="admin-user-name">Manager Admin</span>
+                    <span class="role-pill admin" id="admin-user-role">ADMIN</span>
+                </div>
+                <button type="button" class="btn-logout" id="btn-admin-logout" title="Log out of manager session">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                    <span>Logout</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+
+        <!-- Header -->
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+            <div>
+                <h1 style="font-size: 1.7rem; font-weight: 800; color: #0f172a; font-family: 'Space Grotesk', sans-serif;">
+                    Admin Analytics & Inventory Module
+                </h1>
+                <p style="font-size: 0.88rem; color: #64748b;">
+                    Executive summary of gross revenue, processed volume (kg), detergent & supply inventory, and customer CRM.
+                </p>
+            </div>
+
+            <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                <span class="live-sync-pill" title="Live multi-tab sync active via BroadcastChannel">
+                    <span class="live-sync-dot"></span>
+                    <span>Live Sync Active</span>
+                </span>
+                <button type="button" id="btn-admin-clean-slate" class="btn btn-outline btn-sm" style="display: inline-flex; align-items: center; gap: 0.35rem; color: #b91c1c; border-color: #fca5a5; background: #fff5f5; font-weight: 700;" title="Clear all orders to 0 for presentation testing">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    <span>Reset to 0 (Clean Slate)</span>
+                </button>
+                <button type="button" id="btn-admin-load-demo" class="btn btn-outline btn-sm" style="display: inline-flex; align-items: center; gap: 0.35rem; color: #0284c7; border-color: #bae6fd; background: #f0f9ff; font-weight: 700;" title="Restore 10 demo orders">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                    <span>Load Demo Data</span>
+                </button>
+                <button type="button" onclick="location.reload()" class="btn btn-outline btn-sm" style="display: inline-flex; align-items: center; gap: 0.4rem;">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="23 4 23 10 17 10"></polyline>
+                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                    </svg>
+                    <span>Refresh</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- KPI Metric Cards Grid -->
+        <div class="grid-4" style="margin-bottom: 2rem;">
+            
+            <!-- Total Revenue -->
+            <div class="card" style="border-left: 4px solid #06b6d4; box-shadow: 0 4px 14px rgba(6, 182, 212, 0.08);">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                        <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: #64748b;">Gross Revenue (Sales)</div>
+                        <div id="stat-total-revenue" style="font-size: 1.6rem; font-weight: 800; color: #0f172a; font-family: 'Space Grotesk', sans-serif; margin-top: 0.2rem;">₱0.00</div>
+                    </div>
+                    <div style="width: 38px; height: 38px; border-radius: 10px; background: #cffafe; display: flex; align-items: center; justify-content: center; color: #0891b2; box-shadow: 0 2px 8px rgba(6, 182, 212, 0.2);">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="1" x2="12" y2="23"></line>
+                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                        </svg>
+                    </div>
+                </div>
+                <div style="font-size: 0.75rem; color: #059669; font-weight: 600; margin-top: 0.4rem;">
+                    Today's Revenue: <strong id="stat-today-revenue">₱0.00</strong>
+                </div>
+            </div>
+
+            <!-- Total Kg Processed -->
+            <div class="card" style="border-left: 4px solid #0284c7; box-shadow: 0 4px 14px rgba(2, 132, 199, 0.08);">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                        <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: #64748b;">Volume Processed</div>
+                        <div id="stat-total-kg" style="font-size: 1.6rem; font-weight: 800; color: #0f172a; font-family: 'Space Grotesk', sans-serif; margin-top: 0.2rem;">0.0 kg</div>
+                    </div>
+                    <div style="width: 38px; height: 38px; border-radius: 10px; background: #e0f2fe; display: flex; align-items: center; justify-content: center; color: #0284c7; box-shadow: 0 2px 8px rgba(2, 132, 199, 0.2);">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                            <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                        </svg>
+                    </div>
+                </div>
+                <div style="font-size: 0.75rem; color: #64748b; margin-top: 0.4rem;">
+                    Total laundry weight processed
+                </div>
+            </div>
+
+            <!-- Active Orders -->
+            <div class="card" style="border-left: 4px solid #2563eb; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.08);">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                        <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: #64748b;">Active Orders (In-Progress)</div>
+                        <div id="stat-active-orders" style="font-size: 1.6rem; font-weight: 800; color: #0f172a; font-family: 'Space Grotesk', sans-serif; margin-top: 0.2rem;">0</div>
+                    </div>
+                    <div style="width: 38px; height: 38px; border-radius: 10px; background: #dbeafe; display: flex; align-items: center; justify-content: center; color: #1d4ed8; box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                        </svg>
+                    </div>
+                </div>
+                <div style="font-size: 0.75rem; color: #64748b; margin-top: 0.4rem;">
+                    Washing, drying, or ready for pickup
+                </div>
+            </div>
+
+            <!-- Unpaid Balance / Receivables -->
+            <div class="card" style="border-left: 4px solid #f59e0b; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.08);">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                        <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: #64748b;">Receivables (Unpaid)</div>
+                        <div id="stat-unpaid-amount" style="font-size: 1.6rem; font-weight: 800; color: #d97706; font-family: 'Space Grotesk', sans-serif; margin-top: 0.2rem;">₱0.00</div>
+                    </div>
+                    <div style="width: 38px; height: 38px; border-radius: 10px; background: #fef3c7; display: flex; align-items: center; justify-content: center; color: #d97706; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.2);">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                    </div>
+                </div>
+                <div style="font-size: 0.75rem; color: #d97706; font-weight: 600; margin-top: 0.4rem;">
+                    <span id="stat-unpaid-count">0 orders</span> pending payment upon claim
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Section 2: Visual Charts -->
+        <div class="grid-2" style="margin-bottom: 2.5rem;">
+            
+            <!-- Daily Revenue Bar Chart -->
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h2 class="card-title" style="display: flex; align-items: center; gap: 0.5rem;">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#0284c7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="18" y1="20" x2="18" y2="10"></line>
+                                <line x1="12" y1="20" x2="12" y2="4"></line>
+                                <line x1="6" y1="20" x2="6" y2="14"></line>
+                            </svg>
+                            <span>Daily Sales & Revenue Trend (7 Days)</span>
+                        </h2>
+                        <div class="card-subtitle">Daily revenue performance across the station</div>
+                    </div>
+                    <span class="role-badge">Revenue</span>
+                </div>
+                <div style="position: relative; width: 100%; height: 230px;">
+                    <canvas id="daily-revenue-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- Popular Services Breakdown Doughnut Chart -->
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h2 class="card-title" style="display: flex; align-items: center; gap: 0.5rem;">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#0284c7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
+                                <path d="M22 12A10 10 0 0 0 12 2v10z"></path>
+                            </svg>
+                            <span>Popular Laundry Services Breakdown</span>
+                        </h2>
+                        <div class="card-subtitle">Customer service preference distribution</div>
+                    </div>
+                    <span class="role-badge">Services</span>
+                </div>
+                <div style="position: relative; width: 100%; height: 230px;">
+                    <canvas id="service-breakdown-chart"></canvas>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Section 3: Inventory Tracker & Supplies Management -->
+        <section class="card" style="margin-bottom: 2.5rem;">
+            <div class="card-header">
+                <div>
+                    <h2 class="card-title" style="display: flex; align-items: center; gap: 0.5rem;">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#0284c7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="16.5" y1="9.4" x2="7.5" y2="4.21"></line>
+                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                            <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                            <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                        </svg>
+                        <span>Laundry Supplies & Inventory Tracker</span>
+                    </h2>
+                    <div class="card-subtitle">Track liquid detergents, fabric softeners, bleach, packaging, and dryer sheets</div>
+                </div>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <span id="stat-low-stock-count" class="badge-unpaid">0 items low</span>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="custom-table">
+                    <thead>
+                        <tr>
+                            <th>Item & Category</th>
+                            <th>Current Stock Level</th>
+                            <th>Min. Alert Threshold</th>
+                            <th>Status</th>
+                            <th>Actions (Restock / Simulate Use)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-inventory-tbody">
+                        <!-- Populated by admin.js -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Section 4: Customer CRM Records -->
+        <section class="card">
+            <div class="card-header">
+                <div>
+                    <h2 class="card-title" style="display: flex; align-items: center; gap: 0.5rem;">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#0284c7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                        <span>Customer Records & Loyalty Database</span>
+                    </h2>
+                    <div class="card-subtitle">Overview of registered customers and lifetime transaction spend</div>
+                </div>
+                <span class="role-badge">CRM</span>
+            </div>
+
+            <div class="table-responsive">
+                <table class="custom-table">
+                    <thead>
+                        <tr>
+                            <th>Customer & ID</th>
+                            <th>Contact & Address</th>
+                            <th>Order Frequency</th>
+                            <th>Total Spent</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-customers-tbody">
+                        <!-- Populated by admin.js -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Section 5: Employee & Staff Accounts (RBAC) -->
+        <section class="card" style="margin-top: 2.5rem;">
+            <div class="card-header">
+                <div>
+                    <h2 class="card-title" style="display: flex; align-items: center; gap: 0.5rem;">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#0284c7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                        <span>Staff & Employee Account Management (RBAC)</span>
+                    </h2>
+                    <div class="card-subtitle">Admin-controlled internal employee accounts, role provisioning (Admin vs Cashier), and credentials management</div>
+                </div>
+                <button type="button" class="btn btn-primary btn-sm" id="btn-open-add-employee" style="display: inline-flex; align-items: center; gap: 0.4rem;">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
+                    <span>+ Add New Employee</span>
+                </button>
+            </div>
+
+            <div class="table-responsive">
+                <table class="custom-table">
+                    <thead>
+                        <tr>
+                            <th>Staff Member</th>
+                            <th>Username</th>
+                            <th>Designated Role</th>
+                            <th>Email Address</th>
+                            <th>Date Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-employees-tbody">
+                        <!-- Populated by admin.js -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Section 6: Customer Feedbacks & Service Ratings (Admin-Only SQA / CRM) -->
+        <section class="card" style="margin-top: 2.5rem; margin-bottom: 2.5rem;">
+            <div class="card-header">
+                <div>
+                    <h2 class="card-title" style="display: flex; align-items: center; gap: 0.5rem;">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="#f59e0b" stroke="#d97706" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                        <span>Customer Satisfaction & Post-Service Reviews</span>
+                    </h2>
+                    <div class="card-subtitle">Customer-submitted ratings and comments collected upon order completion (tracker & web portal)</div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <div style="background: #ecfdf5; border: 1.5px solid #a7f3d0; padding: 0.4rem 0.8rem; border-radius: 12px; text-align: right;">
+                        <span style="font-size: 0.7rem; color: #047857; font-weight: 700; text-transform: uppercase;">Average Rating</span>
+                        <div style="display: flex; align-items: baseline; gap: 0.3rem;">
+                            <span id="feedback-avg-score" style="font-size: 1.35rem; font-weight: 900; color: #065f46;">5.0</span>
+                            <span style="font-size: 0.8rem; color: #059669;">/ 5.0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rating Breakdown Metrics -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.75rem; margin-bottom: 1.4rem;">
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 0.7rem; text-align: center;">
+                    <div style="font-size: 0.72rem; color: #64748b; font-weight: 700;">TOTAL REVIEWS</div>
+                    <div id="feedback-total-count" style="font-size: 1.4rem; font-weight: 800; color: #0f172a;">0</div>
+                </div>
+                <div style="background: #fefce8; border: 1px solid #fef08a; border-radius: 10px; padding: 0.7rem; text-align: center;">
+                    <div style="font-size: 0.72rem; color: #854d0e; font-weight: 700;">5-STAR REVIEWS</div>
+                    <div id="feedback-count-5" style="font-size: 1.4rem; font-weight: 800; color: #ca8a04;">0</div>
+                </div>
+                <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 0.7rem; text-align: center;">
+                    <div style="font-size: 0.72rem; color: #166534; font-weight: 700;">4-STAR REVIEWS</div>
+                    <div id="feedback-count-4" style="font-size: 1.4rem; font-weight: 800; color: #15803d;">0</div>
+                </div>
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 0.7rem; text-align: center;">
+                    <div style="font-size: 0.72rem; color: #64748b; font-weight: 700;">≤3-STAR ALERTS</div>
+                    <div id="feedback-count-low" style="font-size: 1.4rem; font-weight: 800; color: #ef4444;">0</div>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="custom-table">
+                    <thead>
+                        <tr>
+                            <th>Job Order #</th>
+                            <th>Customer Details</th>
+                            <th>Laundry Service</th>
+                            <th>Score / Rating</th>
+                            <th>Customer Feedback Comment</th>
+                            <th>Submitted At</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-feedbacks-tbody">
+                        <!-- Populated by admin.js -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal: Add New Employee Account -->
+    <div id="add-employee-modal" class="modal-overlay">
+        <div class="modal-dialog" style="max-width: 480px;">
+            <div class="modal-header">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#0284c7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <line x1="19" y1="8" x2="19" y2="14"></line>
+                        <line x1="22" y1="11" x2="16" y2="11"></line>
+                    </svg>
+                    <h3 style="font-size: 1.1rem; font-weight: 700; color: #0f172a; margin: 0;">Provision Employee Account</h3>
+                </div>
+                <button type="button" id="btn-close-employee-modal" class="modal-close-btn">&times;</button>
+            </div>
+            <form id="add-employee-form">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label" for="emp-fullname">Employee Full Name *</label>
+                        <input type="text" id="emp-fullname" class="form-control" placeholder="e.g. Maria Santos" required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="emp-username">Login Username *</label>
+                            <input type="text" id="emp-username" class="form-control" placeholder="e.g. msantos" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="emp-role">Designated Position / Role *</label>
+                            <select id="emp-role" class="form-control" required>
+                                <option value="staff" selected>Cashier / Counter Staff</option>
+                                <option value="admin">Station Supervisor / Admin</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="emp-password">Initial Password *</label>
+                        <input type="text" id="emp-password" class="form-control" placeholder="e.g. Pass1234" required minlength="6">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="emp-email">Corporate Email (Optional)</label>
+                        <input type="email" id="emp-email" class="form-control" placeholder="e.g. msantos@aquartlaundry.ph">
+                    </div>
+
+                    <p style="font-size: 0.78rem; color: #64748b; margin-top: 0.5rem; line-height: 1.4;">
+                        Cashiers can access Job Order intake, POS billing, status updater, and live supplies refilling. Supervisors have full managerial analytics and inventory access.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="document.getElementById('add-employee-modal').classList.remove('active')">Cancel</button>
+                    <button type="submit" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 0.4rem;">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 13l4 4L19 7"/></svg>
+                        <span>Create Account</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Quick Restock Inventory -->
+    <div id="restock-modal" class="modal-overlay">
+        <div class="modal-dialog" style="max-width: 440px;">
+            <div class="modal-header">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#0284c7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 5v14M5 12h14"></path>
+                    </svg>
+                    <h3 style="font-size: 1.1rem; font-weight: 700; color: #0f172a; margin: 0;">Restock Inventory Supply</h3>
+                </div>
+                <button type="button" id="btn-close-restock" class="modal-close-btn">&times;</button>
+            </div>
+            <form id="restock-form">
+                <div class="modal-body">
+                    <input type="hidden" id="restock-inv-id">
+                    
+                    <div style="margin-bottom: 1rem;">
+                        <div style="font-size: 0.78rem; color: #64748b;">Item to Restock:</div>
+                        <div id="restock-item-name" style="font-size: 1.1rem; font-weight: 800; color: #0284c7;">--</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="restock-amount-input">Quantity to Add (<span id="restock-unit-label">Units</span>):</label>
+                        <input type="number" id="restock-amount-input" class="form-control" value="10" min="1" step="0.5" required>
+                    </div>
+
+                    <p style="font-size: 0.8rem; color: #94a3b8;">
+                        New stock will be added to your active inventory immediately, clearing low-stock warning thresholds.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="document.getElementById('restock-modal').classList.remove('active')">Cancel</button>
+                    <button type="submit" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 0.4rem;">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
+                        <span>Confirm Restock</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/admin.js"></script>
+</body>
+</html>

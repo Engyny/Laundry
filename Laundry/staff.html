@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff & Cashier Order Processing Dashboard | Aquart Laundry</title>
+    <meta name="description" content="Dashboard for laundry cashier and staff. Job order entry, one-click status updater, automated notification, and digital receipt generator.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <style id="auth-guard-style">html { display: none !important; }</style>
+    <script src="js/store.js"></script>
+    <script>
+        (function() {
+            LaundryStore.init();
+            const activeStaffUser = LaundryStore.requireAuth(['staff', 'admin'], 'Staff POS Terminal');
+            if (activeStaffUser) {
+                const s = document.getElementById('auth-guard-style');
+                if (s) s.remove();
+            } else {
+                window.stop && window.stop();
+            }
+        })();
+    </script>
+    <style>
+        .filter-pill {
+            padding: 0.4rem 0.85rem;
+            border-radius: var(--radius-full);
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            border: 1.5px solid #e2e8f0;
+            background: white;
+            color: #64748b;
+            transition: all 0.2s ease;
+        }
+        .filter-pill:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+        .filter-pill.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+            box-shadow: 0 2px 8px rgba(2, 132, 199, 0.25);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Top Navigation Bar -->
+    <header class="navbar no-print">
+        <div class="navbar-container">
+            <a href="index.html" class="brand-logo">
+                <div class="brand-drop-icon" title="Aquart Laundry Station">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
+                        <path d="M12 12a3 3 0 1 0 3-3"></path>
+                    </svg>
+                </div>
+                <div class="brand-title-wrap">
+                    <div class="brand-title-text">Aquart <span>Laundry</span></div>
+                    <div class="brand-subtitle-tag">SMART WORKFLOW & TRACKING</div>
+                </div>
+            </a>
+
+            <nav>
+                <ul class="nav-links">
+                    <li><a href="index.html" class="nav-link">Customer Tracker</a></li>
+                    <li><a href="staff.html" class="nav-link active">Staff Cashier</a></li>
+                    <li id="nav-item-admin" style="display: none;"><a href="admin.html" class="nav-link">Admin Analytics</a></li>
+                </ul>
+            </nav>
+
+            <!-- Active User Session Badge with Logout -->
+            <div class="user-session-badge" id="staff-session-widget">
+                <div class="user-avatar-circle" id="staff-user-initials">SC</div>
+                <div class="user-meta">
+                    <span class="user-meta-name" id="staff-user-name">Staff Cashier</span>
+                    <span class="role-pill staff" id="staff-user-role">STAFF</span>
+                </div>
+                <button type="button" class="btn-logout" id="btn-staff-logout" title="Log out of session">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                    <span>Logout</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content no-print">
+
+        <!-- Top Actions Bar -->
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+            <div>
+                <h1 style="font-size: 1.7rem; font-weight: 800; color: #0f172a; font-family: 'Space Grotesk', sans-serif;">
+                    Staff Order Processing Dashboard
+                </h1>
+                <p style="font-size: 0.88rem; color: #64748b;">
+                    Manage active customer orders, progress washing workflows with one-click status controls, and monitor live station inventory.
+                </p>
+            </div>
+
+            <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                <span class="live-sync-pill" title="Live multi-tab sync active via BroadcastChannel">
+                    <span class="live-sync-dot"></span>
+                    <span>Live Sync Active</span>
+                </span>
+                <button type="button" id="btn-staff-clean-slate" class="btn btn-outline btn-sm" style="display: inline-flex; align-items: center; gap: 0.35rem; color: #b91c1c; border-color: #fca5a5; background: #fff5f5; font-weight: 700;" title="Clear all orders to 0 for presentation testing">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    <span>Reset to 0 (Clean Slate)</span>
+                </button>
+                <button type="button" id="btn-staff-load-demo" class="btn btn-outline btn-sm" style="display: inline-flex; align-items: center; gap: 0.35rem; color: #0284c7; border-color: #bae6fd; background: #f0f9ff; font-weight: 700;" title="Restore 10 demo orders">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                    <span>Load Demo Data</span>
+                </button>
+                <button type="button" id="btn-open-new-order" class="btn btn-primary" style="padding: 0.65rem 1.25rem; font-size: 0.92rem; display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 800;">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    <span>New Job Order (F2)</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Notification Banner / Sound Indicator -->
+        <div style="background: #eff6ff; border-left: 4px solid #0284c7; padding: 0.75rem 1.25rem; border-radius: var(--radius-sm); margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; color: #1e40af;">
+            <div style="display: flex; align-items: center; gap: 0.6rem;">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#0284c7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                </svg>
+                <span><strong>Automated Notification Dispatcher Active:</strong> Dispatches real-time SMS alerts to customer phone when laundry is marked "Ready for Pickup".</span>
+            </div>
+            <button type="button" onclick="LaundryStore.playAudioChime('ready')" class="btn btn-outline btn-sm" style="background: white; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 0.4rem;">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                </svg>
+                <span>Test Chime</span>
+            </button>
+        </div>
+
+        <!-- Live Workflow KPI Metrics Cards -->
+        <div class="staff-kpi-grid">
+            <div class="staff-kpi-card kpi-reserved" data-filter="reserved" title="Click to view online drop-off reservations">
+                <div>
+                    <div class="staff-kpi-num" id="kpi-reserved-num" style="color: #d97706;">0</div>
+                    <div class="staff-kpi-label">Drop-off Reservations</div>
+                </div>
+                <div class="staff-kpi-icon-wrap" style="background: #fef3c7; color: #b45309;">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="staff-kpi-card kpi-received" data-filter="received" title="Click to view received laundry">
+                <div>
+                    <div class="staff-kpi-num" id="kpi-received-num" style="color: #0284c7;">0</div>
+                    <div class="staff-kpi-label">Received in Store</div>
+                </div>
+                <div class="staff-kpi-icon-wrap" style="background: #e0f2fe; color: #0284c7;">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                        <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                        <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="staff-kpi-card kpi-washing" data-filter="washing" title="Click to view washing & drying">
+                <div>
+                    <div class="staff-kpi-num" id="kpi-washing-num" style="color: #0891b2;">0</div>
+                    <div class="staff-kpi-label">Active in Machines</div>
+                </div>
+                <div class="staff-kpi-icon-wrap" style="background: #cffafe; color: #0891b2;">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M12 6v6l4 2"></path>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="staff-kpi-card kpi-ready" data-filter="ready" title="Click to view ready for pickup">
+                <div>
+                    <div class="staff-kpi-num" id="kpi-ready-num" style="color: #059669;">0</div>
+                    <div class="staff-kpi-label">Ready for Pickup</div>
+                </div>
+                <div class="staff-kpi-icon-wrap" style="background: #d1fae5; color: #059669;">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="staff-kpi-card kpi-total" data-filter="all" title="Click to view all orders">
+                <div>
+                    <div class="staff-kpi-num" id="kpi-total-num" style="color: #4f46e5;">0</div>
+                    <div class="staff-kpi-label">Total Station Orders</div>
+                </div>
+                <div class="staff-kpi-icon-wrap" style="background: #e0e7ff; color: #4f46e5;">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="20" x2="18" y2="10"></line>
+                        <line x1="12" y1="20" x2="12" y2="4"></line>
+                        <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Station Consumables & Live Supply Tank Card (Requested by User) -->
+        <div class="card" style="padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; border-top: 3px solid #0284c7;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1rem;">
+                <div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6 2v20"></path><path d="M18 2v20"></path><path d="M6 12h12"></path>
+                        </svg>
+                        <h2 style="font-size: 1.05rem; font-weight: 700; color: #0f172a; margin: 0;">Station Consumables & Live Supply Tanks</h2>
+                        <span id="staff-low-stock-pill" class="supply-status-tag healthy">All Tanks Sufficient</span>
+                    </div>
+                    <p style="font-size: 0.8rem; color: #64748b; margin-top: 0.25rem;">
+                        Real-time dispensing stock for detergent, conditioner, bleach, and packaging. Refill promptly when reaching alert thresholds.
+                    </p>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button type="button" id="btn-open-refill-modal" class="btn btn-outline btn-sm" style="font-weight: 600; display: inline-flex; align-items: center; gap: 0.4rem;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 5v14M5 12h14"></path>
+                        </svg>
+                        <span>Quick Refill Supplies</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Dynamic Staff Supplies Grid -->
+            <div class="staff-supplies-grid" id="staff-supplies-grid">
+                <!-- Rendered dynamically by staff.js -->
+            </div>
+        </div>
+
+        <!-- Incoming Online Reservations Alert Banner (Dynamic) -->
+        <div id="staff-reservation-alerts" style="display: none;"></div>
+
+        <!-- Filters & Search Toolbar -->
+        <div class="card" style="padding: 1rem; margin-bottom: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                
+                <!-- Status Filter Pills -->
+                <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;" id="status-filters">
+                    <button class="filter-pill active" data-status="all">All Orders <span class="pill-count" id="count-all">0</span></button>
+                    <button class="filter-pill" data-status="reserved" style="border-color: #fde68a;">Reserved <span class="pill-count" id="count-reserved" style="background: #fef3c7; color: #b45309;">0</span></button>
+                    <button class="filter-pill" data-status="received">Received <span class="pill-count" id="count-received">0</span></button>
+                    <button class="filter-pill" data-status="washing">Washing <span class="pill-count" id="count-washing">0</span></button>
+                    <button class="filter-pill" data-status="drying">Drying <span class="pill-count" id="count-drying">0</span></button>
+                    <button class="filter-pill" data-status="folding">Folding <span class="pill-count" id="count-folding">0</span></button>
+                    <button class="filter-pill" data-status="ready">Ready <span class="pill-count" id="count-ready">0</span></button>
+                    <button class="filter-pill" data-status="completed">Completed <span class="pill-count" id="count-completed">0</span></button>
+                </div>
+
+                <!-- Search Input -->
+                <div style="position: relative; min-width: 260px;">
+                    <input type="text" id="staff-search-input" class="form-control" placeholder="Search JO#, Name, or Phone..." style="padding-left: 2.2rem;">
+                    <span style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: #94a3b8; display: flex; align-items: center; pointer-events: none;">
+                        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Orders Table Layout with Sidebar for Recent SMS Notifications -->
+        <div class="staff-orders-split-grid">
+            
+            <!-- Table Area -->
+            <div class="card" style="padding: 0; overflow: hidden;">
+                <div class="table-responsive">
+                    <table class="custom-table">
+                        <thead>
+                            <tr>
+                                <th>Job Order #</th>
+                                <th>Customer Details</th>
+                                <th>Service & Weight</th>
+                                <th>Special Requests / Notes</th>
+                                <th>Current Status</th>
+                                <th>Payment</th>
+                                <th>Next Step (One-Click)</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="staff-orders-tbody">
+                            <!-- Populated dynamically by staff.js -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Recent Automated SMS Notifications Drawer (Full-Width Bottom Panel) -->
+            <div class="card" style="padding: 1.25rem; width: 100%;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.85rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.65rem;">
+                    <div style="display: flex; align-items: center; gap: 0.6rem;">
+                        <div style="width: 34px; height: 34px; border-radius: 8px; background: #e0f2fe; display: flex; align-items: center; justify-content: center; color: #0284c7;">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 style="font-size: 0.95rem; font-weight: 700; color: #0f172a; margin: 0;">
+                                Outgoing SMS & Customer Notification Logs
+                            </h3>
+                            <div style="font-size: 0.72rem; color: #64748b;">Real-time automated status updates delivered to customer mobile devices</div>
+                        </div>
+                    </div>
+                    <span class="role-badge" style="font-size: 0.68rem; font-weight: 700; background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;">Auto-Synced</span>
+                </div>
+                <div id="notification-logs-list" style="max-height: 280px; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 0.75rem;">
+                    <!-- Outgoing SMS list dynamically loaded -->
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Modal: New Job Order Form -->
+    <div id="new-order-modal" class="modal-overlay no-print">
+        <div class="modal-dialog" style="max-width: 650px;">
+            <div class="modal-header">
+                <div>
+                    <h3 style="font-size: 1.2rem; font-weight: 800; color: #0f172a;">New Job Order Entry</h3>
+                    <div style="font-size: 0.8rem; color: #64748b;">Log customer laundry load and billing details</div>
+                </div>
+                <button type="button" id="btn-close-new-order" class="modal-close-btn">&times;</button>
+            </div>
+
+            <form id="new-order-form">
+                <div class="modal-body">
+                    
+                    <!-- Reference and Quick Customer Pick -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Job Order # (Auto-generated):</label>
+                            <input type="text" id="order-jo-id" class="form-control" readonly style="font-family: monospace; font-weight: 800; background: #f8fafc; color: #0284c7;">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Existing Customer (Optional):</label>
+                            <select id="order-customer-select" class="form-control">
+                                <option value="">-- New Customer / Walk-in --</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Customer Info -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="order-cust-name">Customer Name: *</label>
+                            <input type="text" id="order-cust-name" class="form-control" placeholder="e.g. Maria Santos" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="order-cust-phone">Mobile Phone Number: *</label>
+                            <input type="tel" id="order-cust-phone" class="form-control" placeholder="e.g. 0917-892-3412" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="order-cust-address">Delivery Address / Landmark:</label>
+                        <input type="text" id="order-cust-address" class="form-control" placeholder="e.g. Unit 4, Banilad, Cebu City">
+                    </div>
+
+                    <!-- Service & Weight -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="order-service-select">Laundry Service:</label>
+                            <select id="order-service-select" class="form-control">
+                                <option value="wash-dry-fold">Wash - Dry - Fold (₱35/kg • Min 5kg)</option>
+                                <option value="wash-dry-press">Wash - Dry - Press / Ironing (₱55/kg)</option>
+                                <option value="dry-cleaning">Dry Cleaning Special Care (₱120/load)</option>
+                                <option value="heavy-comforter">Comforter & Heavy Blankets (₱65/kg)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="order-weight-input">Weight (Kilograms): *</label>
+                            <input type="number" id="order-weight-input" class="form-control" value="6.0" step="0.1" min="0.5" required>
+                        </div>
+                    </div>
+
+                    <!-- Add-ons selection -->
+                    <div class="form-group">
+                        <label class="form-label">Add-on Services:</label>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: 0.85rem;">
+                            <label style="display: flex; align-items: center; gap: 0.4rem; background: #f8fafc; padding: 0.4rem 0.6rem; border-radius: 6px; border: 1px solid #e2e8f0; cursor: pointer;">
+                                <input type="checkbox" class="order-addon-check" value="fabcon" checked>
+                                <span>Downy Fabcon (+₱20)</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.4rem; background: #f8fafc; padding: 0.4rem 0.6rem; border-radius: 6px; border: 1px solid #e2e8f0; cursor: pointer;">
+                                <input type="checkbox" class="order-addon-check" value="bleach">
+                                <span>Oxygen Bleach (+₱25)</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.4rem; background: #f8fafc; padding: 0.4rem 0.6rem; border-radius: 6px; border: 1px solid #e2e8f0; cursor: pointer;">
+                                <input type="checkbox" class="order-addon-check" value="rush">
+                                <span>Express Rush 4-5 Hrs (+₱50)</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.4rem; background: #f8fafc; padding: 0.4rem 0.6rem; border-radius: 6px; border: 1px solid #e2e8f0; cursor: pointer;">
+                                <input type="checkbox" class="order-addon-check" value="ecobag">
+                                <span>Eco Bag (+₱25)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.85rem; font-weight: 700;">
+                            <input type="checkbox" id="order-is-delivery">
+                            <span>Include Doorstep Delivery (+₱50 fee)</span>
+                        </label>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="order-notes">Special Instructions / Remarks:</label>
+                        <input type="text" id="order-notes" class="form-control" placeholder="e.g. Separate whites, low heat drying requested">
+                    </div>
+
+                    <!-- Payment Details Area -->
+                    <div style="background: #f1f5f9; padding: 1rem; border-radius: var(--radius-md); border: 1px solid #cbd5e1; margin-top: 1rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem;">
+                            <div>
+                                <div style="font-size: 0.78rem; text-transform: uppercase; font-weight: 700; color: #64748b;">Total Bill Amount</div>
+                                <div id="order-calc-total" style="font-size: 1.6rem; font-weight: 800; color: #0284c7; font-family: 'Space Grotesk', sans-serif;">₱230.00</div>
+                                <div id="order-calc-breakdown" style="font-size: 0.75rem; color: #64748b;">--</div>
+                            </div>
+
+                            <div style="text-align: right;">
+                                <label class="form-label" style="margin-bottom: 0.2rem;">Payment Status:</label>
+                                <select id="order-pay-status" class="form-control" style="font-weight: 700;">
+                                    <option value="paid">PAID</option>
+                                    <option value="unpaid">UNPAID (Collect upon claim)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label class="form-label">Payment Method:</label>
+                                <select id="order-pay-method" class="form-control">
+                                    <option value="Cash">Cash</option>
+                                    <option value="GCash">GCash</option>
+                                    <option value="Maya">Maya</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label class="form-label">Cash Received & Change:</label>
+                                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                    <input type="number" id="order-cash-given" class="form-control" placeholder="₱ Cash" style="width: 110px;">
+                                    <div style="font-size: 0.85rem; font-weight: 700; color: #059669;">Change: <span id="order-change-display">₱0.00</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="document.getElementById('new-order-modal').classList.remove('active')">Cancel</button>
+                    <button type="submit" class="btn btn-primary" style="display:inline-flex; align-items:center; gap:0.45rem;">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                        <span>Save & Print Receipt</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Digital Receipt Generator (Thermal Style & Printable) -->
+    <div id="receipt-modal" class="modal-overlay">
+        <div class="modal-dialog print-area" style="max-width: 420px;">
+            <div class="modal-header no-print">
+                <div style="display:flex; align-items:center; gap:0.5rem;">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#0284c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z"></path><line x1="8" y1="6" x2="16" y2="6"></line><line x1="8" y1="10" x2="16" y2="10"></line><line x1="8" y1="14" x2="12" y2="14"></line></svg>
+                    <h3 style="font-size: 1.05rem; font-weight: 700;">Digital Receipt Generator</h3>
+                </div>
+                <button type="button" id="btn-close-receipt" class="modal-close-btn">&times;</button>
+            </div>
+
+            <div class="modal-body" style="padding: 1.5rem 1rem;">
+                
+                <!-- Printable Thermal Receipt Slip -->
+                <div class="receipt-wrapper">
+                    <div class="receipt-header">
+                        <div class="receipt-title">AQUART LAUNDRY</div>
+                        <div style="font-size: 0.75rem; color: #64748b;">Smart Workflow & Commercial Laundry Station</div>
+                        <div style="font-size: 0.72rem; color: #94a3b8;">Door 3, Aquart Bldg, J.P. Laurel Ave, Davao City</div>
+                        <div style="font-size: 0.72rem; color: #94a3b8;">Tel: (082) 298-5432 • Mobile: +63 917 890 2782</div>
+                    </div>
+
+                    <div class="receipt-divider"></div>
+
+                    <div class="receipt-row">
+                        <span>JOB ORDER #:</span>
+                        <strong id="receipt-jo-id" style="font-size: 0.95rem; color: #0284c7;">JO-2026-1081</strong>
+                    </div>
+                    <div class="receipt-row">
+                        <span>Date & Time:</span>
+                        <span id="receipt-date-time">--</span>
+                    </div>
+                    <div class="receipt-row">
+                        <span>Customer:</span>
+                        <strong id="receipt-cust-name">Maria Santos</strong>
+                    </div>
+                    <div class="receipt-row">
+                        <span>Contact:</span>
+                        <span id="receipt-cust-phone">0917-892-3412</span>
+                    </div>
+
+                    <div class="receipt-divider"></div>
+
+                    <div class="receipt-row">
+                        <span id="receipt-service-title" style="font-weight: 700;">Wash - Dry - Fold</span>
+                        <span id="receipt-subtotal-display">₱227.50</span>
+                    </div>
+                    <div class="receipt-row" style="font-size: 0.78rem; color: #64748b;">
+                        <span>Weight Processed:</span>
+                        <span id="receipt-weight-display">6.5 kg</span>
+                    </div>
+                    <div class="receipt-row" style="font-size: 0.78rem; color: #64748b;">
+                        <span>Add-ons & Options:</span>
+                        <span id="receipt-addons-display">₱20.00</span>
+                    </div>
+
+                    <div class="receipt-divider"></div>
+
+                    <div style="font-size: 0.72rem; color: #475569; margin: 0.25rem 0;">
+                        <span style="font-weight: 700; color: #0f172a;">Special Instructions:</span>
+                        <div id="receipt-notes-display" style="color: #0284c7; font-weight: 600; margin-top: 2px;">Standard Care & Handling</div>
+                    </div>
+
+                    <div class="receipt-divider"></div>
+
+                    <div class="receipt-row" style="font-size: 1.15rem; font-weight: 800;">
+                        <span>TOTAL AMOUNT:</span>
+                        <span id="receipt-total-display">₱247.50</span>
+                    </div>
+
+                    <div style="margin-top: 0.6rem; text-align: center;">
+                        <span id="receipt-payment-badge" class="badge-paid">PAID (Cash)</span>
+                    </div>
+
+                    <!-- Realtime QR Code for Mobile Scanning -->
+                    <div class="receipt-qr" id="receipt-qr-container"></div>
+
+                    <div style="text-align: center; font-size: 0.72rem; color: #64748b; line-height: 1.35; margin-top: 0.4rem;">
+                        <div>Scan this QR code with your smartphone</div>
+                        <div>to view real-time status of your laundry anytime!</div>
+                        <div style="margin-top: 0.4rem; font-style: italic;">Thank you for your business!</div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="modal-footer no-print">
+                <button type="button" id="btn-export-pdf" class="btn btn-outline btn-sm" style="display: inline-flex; align-items: center; gap: 0.4rem; color: #0284c7; border-color: #bae6fd; background: #f0f9ff;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    <span>Save / Export PDF</span>
+                </button>
+                <button type="button" id="btn-send-receipt-sms" class="btn btn-outline btn-sm" style="display: inline-flex; align-items: center; gap: 0.4rem;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span>Send SMS Link</span>
+                </button>
+                <button type="button" id="btn-print-receipt" class="btn btn-primary btn-sm" style="display: inline-flex; align-items: center; gap: 0.4rem;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                        <rect x="6" y="14" width="12" height="8"></rect>
+                    </svg>
+                    <span>Print Receipt</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Simulated Automated SMS Notification Popup -->
+    <div id="sms-preview-modal" class="modal-overlay no-print">
+        <div class="modal-dialog" style="max-width: 440px;">
+            <div class="modal-header">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                    </svg>
+                    <h3 style="font-size: 1rem; font-weight: 700; margin: 0;">Automated SMS Notification Dispatched</h3>
+                </div>
+                <button type="button" id="btn-close-sms-modal" class="modal-close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="font-size: 0.75rem; color: #64748b; margin-bottom: 0.2rem;">
+                    Dispatched to: <strong id="sms-preview-name" style="color: #0f172a;">Customer</strong> (<span id="sms-preview-phone">0917-XXX-XXXX</span>)
+                </div>
+                <div class="sms-bubble" id="sms-preview-content">
+                    --
+                </div>
+                <div style="font-size: 0.7rem; color: #94a3b8; text-align: right; margin-top: 0.4rem;">
+                    Sent at: <span id="sms-preview-time">--</span> via Aquart Smart SMS Engine
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary btn-sm" onclick="document.getElementById('sms-preview-modal').classList.remove('active')">
+                    Understood
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Staff Quick Refill Consumables -->
+    <div id="staff-refill-modal" class="modal-overlay no-print">
+        <div class="modal-dialog" style="max-width: 440px;">
+            <div class="modal-header">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 5v14M5 12h14"></path>
+                    </svg>
+                    <h3 style="font-size: 1.05rem; font-weight: 700; color: #0f172a; margin: 0;">Quick Refill Station Supplies</h3>
+                </div>
+                <button type="button" id="btn-close-staff-refill" class="modal-close-btn">&times;</button>
+            </div>
+            <form id="staff-refill-form">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label" for="staff-refill-item-select">Select Supply Item to Refill:</label>
+                        <select id="staff-refill-item-select" class="form-control" required>
+                            <!-- Dynamically populated by staff.js -->
+                        </select>
+                    </div>
+
+                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.75rem 1rem; margin-bottom: 1rem;">
+                        <div style="font-size: 0.75rem; color: #64748b;">Current Active Stock Level:</div>
+                        <div id="staff-refill-current-disp" style="font-size: 1.15rem; font-weight: 800; color: #0284c7; margin-top: 0.15rem;">--</div>
+                        <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 0.2rem;">Alert Threshold: <span id="staff-refill-threshold-disp">--</span></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="staff-refill-quantity-input">Quantity to Dispense / Add (<span id="staff-refill-unit-label">Units</span>):</label>
+                        <input type="number" id="staff-refill-quantity-input" class="form-control" value="5" min="0.5" step="0.5" required>
+                    </div>
+
+                    <p style="font-size: 0.78rem; color: #64748b; line-height: 1.4;">
+                        Added stock will instantly update station counters, reset warning indicators, and sync with manager audit logs.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('staff-refill-modal').classList.remove('active')">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm" style="display: inline-flex; align-items: center; gap: 0.4rem;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
+                        <span>Confirm Refill</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: View Online Payment Screenshot / Receipt Proof -->
+    <div id="staff-receipt-modal" class="modal-overlay no-print">
+        <div class="modal-dialog" style="max-width: 480px;">
+            <div class="modal-header">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <div style="width: 32px; height: 32px; border-radius: 8px; background: #e0f2fe; display: flex; align-items: center; justify-content: center; color: #0284c7;">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                    </div>
+                    <div>
+                        <h3 style="font-size: 1.1rem; font-weight: 800; color: #0f172a; margin: 0;">Online Payment Proof</h3>
+                        <div style="font-size: 0.75rem; color: #64748b;">Customer uploaded receipt for verification</div>
+                    </div>
+                </div>
+                <button type="button" id="btn-close-receipt-proof" class="modal-close-btn">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 1.25rem;">
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 0.75rem; margin-bottom: 1rem;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                        <span style="font-size: 0.75rem; color: #64748b;">Job Order #:</span>
+                        <strong id="proof-modal-jo" style="font-family: monospace; color: #0284c7; font-size: 0.85rem;">--</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                        <span style="font-size: 0.75rem; color: #64748b;">Customer:</span>
+                        <strong id="proof-modal-cust" style="font-size: 0.85rem; color: #0f172a;">--</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                        <span style="font-size: 0.75rem; color: #64748b;">Amount Payable:</span>
+                        <strong id="proof-modal-amount" style="font-size: 0.95rem; color: #059669; font-weight: 800;">--</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="font-size: 0.75rem; color: #64748b;">Payment Method / Ref:</span>
+                        <strong id="proof-modal-method" style="font-size: 0.82rem; color: #1e3a8a;">--</strong>
+                    </div>
+                </div>
+
+                <!-- Receipt Image Container -->
+                <div id="proof-modal-img-wrap" style="text-align: center; background: #0f172a; border-radius: 10px; padding: 0.5rem; min-height: 220px; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                    <img id="proof-modal-img" src="" alt="Payment Receipt" style="max-width: 100%; max-height: 380px; object-fit: contain; border-radius: 6px;">
+                </div>
+                <div id="proof-modal-no-img" style="display: none; text-align: center; padding: 2rem; background: #f8fafc; border-radius: 10px; border: 1.5px dashed #cbd5e1;">
+                    <div style="display: flex; justify-content: center; color: #94a3b8; margin-bottom: 0.4rem;">
+                        <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                    </div>
+                    <div style="font-size: 0.85rem; font-weight: 700; color: #475569; margin-top: 0.5rem;">No Screenshot Attached</div>
+                    <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 0.2rem;">Customer provided Reference Number only. Verify via store wallet.</div>
+                </div>
+            </div>
+            <div class="modal-footer" style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                <button type="button" class="btn btn-outline btn-sm" id="btn-cancel-proof-modal">Close</button>
+                <button type="button" class="btn btn-primary btn-sm" id="btn-modal-confirm-paid" style="background: #059669; border: none; display: inline-flex; align-items: center; gap: 0.4rem;">
+                    <span>✓ Confirm Payment</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/qrcode.min.js"></script>
+    <script src="js/staff.js"></script>
+</body>
+</html>
